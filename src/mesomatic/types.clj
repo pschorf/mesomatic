@@ -12,7 +12,7 @@
            org.apache.mesos.Protos$FrameworkInfo$Capability
            org.apache.mesos.Protos$FrameworkInfo$Capability$Type
            org.apache.mesos.Protos$HealthCheck
-           org.apache.mesos.Protos$HealthCheck$HTTP
+           org.apache.mesos.Protos$HealthCheck$HTTPCheckInfo
            org.apache.mesos.Protos$CommandInfo
            org.apache.mesos.Protos$CommandInfo$URI
            org.apache.mesos.Protos$ExecutorInfo
@@ -73,8 +73,7 @@
            org.apache.mesos.Protos$DiscoveryInfo
            org.apache.mesos.Protos$DiscoveryInfo$Visibility
            org.apache.mesos.Protos$Label
-           org.apache.mesos.Protos$Labels
-           ))
+           org.apache.mesos.Protos$Labels))
 
 ;; Our two exported signatures: data->pb and pb->data
 
@@ -381,18 +380,18 @@
 ;; HealthCheck
 ;; ===========
 
-(defrecord HealthCheckHTTP [port path statuses]
+(defrecord HealthCheckHTTPCheckInfo [port path statuses]
   Serializable
   (data->pb [this]
-    (-> (Protos$HealthCheck$HTTP/newBuilder)
+    (-> (Protos$HealthCheck$HTTPCheckInfo/newBuilder)
         (.setPort (int port))
         (cond-> path (.setPath (str path)))
         (.addAllStatuses (mapv int statuses))
         (.build))))
 
-(defmethod pb->data Protos$HealthCheck$HTTP
-  [^Protos$HealthCheck$HTTP http]
-  (HealthCheckHTTP.
+(defmethod pb->data Protos$HealthCheck$HTTPCheckInfo
+  [^Protos$HealthCheck$HTTPCheckInfo http]
+  (HealthCheckHTTPCheckInfo.
    (.getPort http)
    (.getPath http)
    (.getStatusesList http)))
@@ -404,7 +403,7 @@
   (data->pb [this]
     (-> (Protos$HealthCheck/newBuilder)
         (cond->
-            http                 (.setHttp (->pb :HealthCheckHTTP http))
+            http                 (.setHttp (->pb :HealthCheckHTTPCheckInfo http))
             delay-seconds        (.setDelaySeconds (double delay-seconds))
             interval-seconds     (.setIntervalSeconds (double interval-seconds))
             timeout-seconds      (.setTimeoutSeconds (double timeout-seconds))
@@ -1738,7 +1737,7 @@
                :ExecutorID          map->ExecutorID
                :ContainerID         map->ContainerID
                :FrameworkInfo       map->FrameworkInfo
-               :HealthCheckHTTP     map->HealthCheckHTTP
+               :HealthCheckHTTPCheckInfo     map->HealthCheckHTTPCheckInfo
                :HealthCheck         map->HealthCheck
                :URI                 map->URI
                :CommandInfo         map->CommandInfo

@@ -1,10 +1,10 @@
-(defproject clojusc/mesomatic "1.0.1-r2-SNAPSHOT"
+(defproject pschorf/mesomatic "1.5.0-r2"
   :description "A simple and idiomatic Clojure facade around the Mesos JAVA API"
   :url "https://github.com/clojusc/mesomatic"
   :license {:name "MIT License"}
   :dependencies [
     [org.clojure/clojure "1.9.0"]
-    [org.apache.mesos/mesos "1.0.1"]]
+    [org.apache.mesos/mesos "1.5.0"]]
   :profiles {
     :dev {
       :source-paths ["dev-resources/src"]
