@@ -68,12 +68,16 @@
            org.apache.mesos.Protos$ContainerInfo$DockerInfo
            org.apache.mesos.Protos$ContainerInfo$DockerInfo$Network
            org.apache.mesos.Protos$ContainerInfo$DockerInfo$PortMapping
+           org.apache.mesos.Protos$ContainerInfo$MesosInfo
            org.apache.mesos.Protos$Port
            org.apache.mesos.Protos$Ports
            org.apache.mesos.Protos$DiscoveryInfo
            org.apache.mesos.Protos$DiscoveryInfo$Visibility
            org.apache.mesos.Protos$Label
-           org.apache.mesos.Protos$Labels))
+           org.apache.mesos.Protos$Labels
+           org.apache.mesos.Protos$Image
+           org.apache.mesos.Protos$Image$Type
+           org.apache.mesos.Protos$Image$Docker))
 
 ;; Our two exported signatures: data->pb and pb->data
 
@@ -1542,14 +1546,62 @@
         (.addAllParameters (mapv (partial ->pb :Parameter) parameters))
         (.build))))
 
-(defrecord ContainerInfo [type volumes hostname docker]
+
+(defrecord DockerImage [name]
+  Serializable
+  (data->pb [this]
+    (-> (Protos$Image$Docker/newBuilder)
+        (.setName name)
+        (.build))))
+
+(defmethod pb->data Protos$Image$Docker
+  [^Protos$Image$Docker docker-image]
+  (DockerImage. (.getName docker-image)))
+
+(defmethod pb->data Protos$Image$Type
+  [^Protos$Image$Type type]
+  (case-enum type
+             Protos$Image$Type/DOCKER
+             :image-type-docker
+             Protos$Image$Type/APPC
+             :image-type-appc))
+
+(defrecord Image [type docker cached]
+  Serializable
+  (data->pb [this]
+    (-> (Protos$Image/newBuilder)
+        (.setType (data->pb type))
+        (cond->
+            docker (.setDocker (data->pb docker))
+            (not (nil? cached)) (.setCached (boolean cached)))
+        (.build))))
+
+(defmethod pb->data Protos$Image
+  [^Protos$Image image]
+  (Image. (pb->data (.getType image))
+          (pb->data (.getDocker image))
+          (.getCached image)))
+
+(defrecord MesosInfo [image]
+  Serializable
+  (data->pb [this]
+    (-> (Protos$ContainerInfo$MesosInfo/newBuilder)
+        (.setImage (data->pb image))
+        (.build))))
+
+(defmethod pb->data Protos$ContainerInfo$MesosInfo
+  [^Protos$ContainerInfo$MesosInfo mesos-info]
+  (MesosInfo. (pb->data (.getImage mesos-info))))
+
+(defrecord ContainerInfo [type volumes hostname docker mesos]
   Serializable
   (data->pb [this]
     (-> (Protos$ContainerInfo/newBuilder)
         (.setType (data->pb type))
         (cond->
             hostname (.setHostname (str hostname))
-            docker   (.setDocker (->pb :DockerInfo docker)))
+            docker   (.setDocker (->pb :DockerInfo docker))
+            mesos    (.setMesos (->pb :MesosInfo mesos)))
         (.addAllVolumes (mapv (partial ->pb :Volume) volumes))
         (.build))))
 
@@ -1644,6 +1696,8 @@
       :source-master            Protos$TaskStatus$Source/SOURCE_MASTER
       :source-slave             Protos$TaskStatus$Source/SOURCE_SLAVE
       :source-executor          Protos$TaskStatus$Source/SOURCE_EXECUTOR
+      :image-type-docker        Protos$Image$Type/DOCKER
+      :image-type-appc          Protos$Image$Type/APPC
 
       ;; These are too wide and mess up indenting!
       :framework-capability-unknown
@@ -1768,5 +1822,8 @@
                :Volume              map->Volume
                :PortMapping         map->PortMapping
                :DockerInfo          map->DockerInfo
-               :ContainerInfo       map->ContainerInfo)]
+               :ContainerInfo       map->ContainerInfo
+               :MesosInfo           map->MesosInfo
+               :DockerImage         map->DockerImage
+               :Image               map->Image)]
        (f this)))))
