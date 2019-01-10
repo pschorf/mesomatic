@@ -1,4 +1,4 @@
-(defproject pschorf/mesomatic "1.5.0-r3"
+(defproject pschorf/mesomatic "1.5.0-r4-SNAPSHOT"
   :description "A simple and idiomatic Clojure facade around the Mesos JAVA API"
   :url "https://github.com/clojusc/mesomatic"
   :license {:name "MIT License"}

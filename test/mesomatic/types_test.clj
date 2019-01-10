@@ -1,10 +1,9 @@
 (ns mesomatic.types-test
   (:use [clojure.test])
   (:require [mesomatic.types :as types])
-  (:import [mesomatic.types ContainerInfo
-                            MesosInfo
+  (:import [mesomatic.types DockerImage
                             Image
-                            DockerImage]
+                            MesosInfo]
            [org.apache.mesos Protos$ContainerInfo$MesosInfo
                              Protos$ContainerInfo$Type
                              Protos$Image
@@ -14,15 +13,15 @@
 (deftest test-mesos-info
   (testing "data->pb"
     (let [name "foo-image"
-          mesos-info (MesosInfo.
-                      (Image. :image-type-docker (DockerImage. name) true))
-          proto (types/data->pb mesos-info)
-          container-info (ContainerInfo. :container-type-mesos
-                                         []
-                                         "host"
-                                         nil
-                                         mesos-info)
-          container-info-proto (types/data->pb container-info)]
+          mesos-info {:image {:type :image-type-docker
+                              :docker {:name name}
+                              :cached true}}
+          proto (types/->pb :MesosInfo mesos-info)
+          container-info-proto (types/->pb :ContainerInfo
+                                           {:type :container-type-mesos
+                                            :volumes []
+                                            :hostname "host"
+                                            :mesos mesos-info})]
       (is (= Protos$Image$Type/DOCKER (-> proto .getImage .getType)))
       (is (= name (-> proto .getImage .getDocker .getName)))
       (is (-> proto .getImage .getCached))
