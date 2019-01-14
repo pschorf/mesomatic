@@ -1572,7 +1572,7 @@
     (-> (Protos$Image/newBuilder)
         (.setType (data->pb type))
         (cond->
-            docker (.setDocker (data->pb docker))
+            docker (.setDocker (->pb :DockerImage docker))
             (not (nil? cached)) (.setCached (boolean cached)))
         (.build))))
 
@@ -1586,7 +1586,7 @@
   Serializable
   (data->pb [this]
     (-> (Protos$ContainerInfo$MesosInfo/newBuilder)
-        (.setImage (data->pb image))
+        (.setImage (->pb :Image image))
         (.build))))
 
 (defmethod pb->data Protos$ContainerInfo$MesosInfo
